@@ -49,7 +49,7 @@ public class ClienteDAO {
     public boolean apagar(int id) {
         String sql = "DELETE FROM clientes WHERE id = ?";
         Connection conexao = ConexaoFactory.obterConexao();
-        if (conexao != null){
+        if (conexao != null) {
             try {
                 PreparedStatement ps = conexao.prepareStatement(sql);
                 ps.setInt(1, id);
@@ -66,7 +66,7 @@ public class ClienteDAO {
     public ClienteBean obterClientePeloId(int id) {
         String sql = "SELECT id, nome, data_nascimento, cpf, ativo FROM clientes WHERE id = ?";
         Connection conexao = ConexaoFactory.obterConexao();
-        if(conexao != null){
+        if (conexao != null) {
             try {
                 PreparedStatement ps = conexao.prepareStatement(sql);
                 ps.setInt(1, id);
@@ -79,9 +79,10 @@ public class ClienteDAO {
                     cliente.setId(resultSet.getInt("data_nascimento"));
                     cliente.setId(resultSet.getInt("cpf"));
                     cliente.setId(resultSet.getInt("ativo"));
+                    return cliente;
                 }
             } catch (Exception e) {
-            }finally{
+            } finally {
                 ConexaoFactory.fecharConexao();
             }
         }
@@ -109,7 +110,7 @@ public class ClienteDAO {
                 }
             } catch (SQLException e) {
                 e.printStackTrace();
-            } finally{
+            } finally {
                 ConexaoFactory.fecharConexao();
             }
         }
