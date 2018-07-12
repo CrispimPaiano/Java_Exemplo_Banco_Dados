@@ -1,6 +1,7 @@
 package view;
 
 import bean.ClienteBean;
+import dao.ClienteDAO;
 import interfaces.BaseGUInterface;
 import java.util.ArrayList;
 import javax.swing.JButton;
@@ -8,6 +9,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
+import java.util.List;
 import javax.swing.ButtonGroup;
 import javax.swing.JFormattedTextField;
 import javax.swing.JFrame;
@@ -51,9 +53,28 @@ public class ClienteListaCadastro implements BaseGUInterface {
         acaoBotaoEditar();
         acaoBotaoExcluir();
         acaoBotaoTeclas();
+        popularTabela();
         jFrame.setVisible(true);
     }
 
+    public void popularTabela(){
+        ClienteDAO clienteDAO = new ClienteDAO();
+        List<ClienteBean> clientes = clienteDAO.obterClientes();
+        /*
+        for (int i = 0; i < clientes.size(); i++) {
+            ClienteBean cliente = clientes.get(i);
+        }
+        */
+        //foreach
+        for (ClienteBean cliente: clientes) {
+            dtm.addRow(new Object[]{
+                cliente.getId(),
+                cliente.getNome(),
+                cliente.getCpf()
+            });
+        }
+    }
+    
     public void instanciarComponentes() {
         //JLabel´s
         jLabelID = new JLabel("ID");
@@ -190,10 +211,6 @@ public class ClienteListaCadastro implements BaseGUInterface {
                 //data
                 //cpf
                 //ativo/inativo
-                if (jTextFieldID.getText().trim().isEmpty()) {
-                    JOptionPane.showMessageDialog(null, "ID deve ser informado");
-                    jTextFieldID.requestFocus();
-                }
                 if (jTextFieldNome.getText().trim().isEmpty()) {
                     JOptionPane.showMessageDialog(null, "Nome deve ser preenchido");
                     jTextFieldNome.requestFocus();
@@ -216,6 +233,20 @@ public class ClienteListaCadastro implements BaseGUInterface {
                     return;
                 }
 
+                ClienteBean cliente = new ClienteBean();
+                cliente.setNome(jTextFieldNome.getText());
+                cliente.setData("1994-06-21");
+                cliente.setCpf(cpf);
+                int id = new ClienteDAO().inserir(cliente);
+                cliente.setId(id);
+                jTextFieldID.setText(String.valueOf(id));
+                
+                dtm.addRow(new Object[]{
+                    cliente.getId(),
+                    cliente.getNome(),
+                    cliente.getCpf()
+                });
+                
                 limparCampos();
             }
         });
@@ -238,8 +269,11 @@ public class ClienteListaCadastro implements BaseGUInterface {
                     JOptionPane.showMessageDialog(null, "Seleciona um registro");
                     return;
                 }
-                linhaSelecionada = jTable.getSelectedRow();
-
+                int linhaSelecionada = jTable.getSelectedRow();
+                int id = Integer.parseInt(jTable.getValueAt(linhaSelecionada, 0).toString());
+                ClienteBean cliente = new ClienteDAO().obterClientePeloId(id);
+                jTextFieldNome.setText(cliente.getNome());
+                
             }
         });
     }
@@ -254,14 +288,18 @@ public class ClienteListaCadastro implements BaseGUInterface {
         );
         jFormattedTextFieldCPF.setText(dados.getCpf());
         jRadioButtonAtivo.setSelected(dados.isAtivo());
-        jRadioButtonInativo.setSelected(dados.isInativo());
     }
 
     private void acaoBotaoExcluir() {
         jButtonExcluir.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-
+                int linhaSelecionada = jTable.getSelectedRow();
+                int id = Integer.parseInt(jTable.getValueAt(linhaSelecionada, 0).toString());
+                
+                new ClienteDAO().apagar(id);
+                dtm.removeRow(linhaSelecionada);
+                
             }
         });
     }
