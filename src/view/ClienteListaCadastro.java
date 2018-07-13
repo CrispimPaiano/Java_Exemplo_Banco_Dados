@@ -7,8 +7,11 @@ import java.util.ArrayList;
 import javax.swing.JButton;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.FocusEvent;
+import java.awt.event.FocusListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
+import java.sql.SQLException;
 import java.util.List;
 import javax.swing.ButtonGroup;
 import javax.swing.JFormattedTextField;
@@ -54,19 +57,20 @@ public class ClienteListaCadastro implements BaseGUInterface {
         acaoBotaoExcluir();
         acaoBotaoTeclas();
         popularTabela();
+        acaoCodigoLostFocus();
         jFrame.setVisible(true);
     }
 
-    public void popularTabela(){
+    public void popularTabela() {
         ClienteDAO clienteDAO = new ClienteDAO();
         List<ClienteBean> clientes = clienteDAO.obterClientes();
         /*
-        for (int i = 0; i < clientes.size(); i++) {
-            ClienteBean cliente = clientes.get(i);
-        }
-        */
+         for (int i = 0; i < clientes.size(); i++) {
+         ClienteBean cliente = clientes.get(i);
+         }
+         */
         //foreach
-        for (ClienteBean cliente: clientes) {
+        for (ClienteBean cliente : clientes) {
             dtm.addRow(new Object[]{
                 cliente.getId(),
                 cliente.getNome(),
@@ -74,7 +78,7 @@ public class ClienteListaCadastro implements BaseGUInterface {
             });
         }
     }
-    
+
     public void instanciarComponentes() {
         //JLabel´s
         jLabelID = new JLabel("ID");
@@ -235,18 +239,39 @@ public class ClienteListaCadastro implements BaseGUInterface {
 
                 ClienteBean cliente = new ClienteBean();
                 cliente.setNome(jTextFieldNome.getText());
-                cliente.setData("1994-06-21");
+                cliente.setData(Utilitarios.obterPadraoAmericano(jFormattedTextFieldData.getText()));
                 cliente.setCpf(cpf);
-                int id = new ClienteDAO().inserir(cliente);
-                cliente.setId(id);
-                jTextFieldID.setText(String.valueOf(id));
-                
-                dtm.addRow(new Object[]{
-                    cliente.getId(),
-                    cliente.getNome(),
-                    cliente.getCpf()
-                });
-                
+
+                if (jTextFieldID.getText().isEmpty()) {
+                    int id = new ClienteDAO().inserir(cliente);
+                    cliente.setId(id);
+                    jTextFieldID.setText(String.valueOf(id));
+
+                    dtm.addRow(new Object[]{
+                        cliente.getId(),
+                        cliente.getNome(),
+                        cliente.getCpf()
+                    });
+                }else{
+                    try{
+                        int id = Integer.parseInt(jTextFieldID.getText());
+                        cliente.setId(id);
+                        boolean alterou = new ClienteDAO().alterar(cliente);
+                        if(alterou){
+                            JOptionPane.showMessageDialog(null, "Cliente alterado com sucesso");
+                            int linhaSelecionada = jTable.getSelectedRow();
+                            dtm.setValueAt(cliente.getId(), linhaSelecionada, 0);
+                            dtm.setValueAt(cliente.getNome(), linhaSelecionada, 1);
+                            dtm.setValueAt(cliente.getCpf(), linhaSelecionada, 2);
+                        }else{
+                            JOptionPane.showMessageDialog(null, "Não foi possível alterar");
+                        }
+                    }catch(NumberFormatException e1){
+                        JOptionPane.showMessageDialog(null, "Código deve ser um código válido");
+                        jTextFieldID.requestFocus();
+                    }
+                }
+
                 limparCampos();
             }
         });
@@ -273,7 +298,10 @@ public class ClienteListaCadastro implements BaseGUInterface {
                 int id = Integer.parseInt(jTable.getValueAt(linhaSelecionada, 0).toString());
                 ClienteBean cliente = new ClienteDAO().obterClientePeloId(id);
                 jTextFieldNome.setText(cliente.getNome());
-                
+                jTextFieldID.setText(String.valueOf(cliente.getId()));
+                jFormattedTextFieldCPF.setText(cliente.getCpf());
+                jFormattedTextFieldData.setText(Utilitarios.obterPadraoBr(cliente.getData()));
+
             }
         });
     }
@@ -296,10 +324,10 @@ public class ClienteListaCadastro implements BaseGUInterface {
             public void actionPerformed(ActionEvent e) {
                 int linhaSelecionada = jTable.getSelectedRow();
                 int id = Integer.parseInt(jTable.getValueAt(linhaSelecionada, 0).toString());
-                
+
                 new ClienteDAO().apagar(id);
                 dtm.removeRow(linhaSelecionada);
-                
+
             }
         });
     }
@@ -381,6 +409,42 @@ public class ClienteListaCadastro implements BaseGUInterface {
             }
         });
 
+    }
+
+    private void acaoCodigoLostFocus() {
+        jTextFieldID.addFocusListener(new FocusListener() {
+
+            @Override
+            public void focusGained(FocusEvent e) {
+                
+            }
+
+            @Override
+            public void focusLost(FocusEvent e) {
+                if(!jTextFieldID.getText().isEmpty()){
+                    try {
+                        int id = Integer.parseInt(jTextFieldID.getText());
+                        ClienteBean cliente = new ClienteDAO().obterClientePeloId(id);
+                        if(cliente == null){
+                            JOptionPane.showMessageDialog(null, "Registro não encontrado");
+                        }else{
+                            jTextFieldNome.setText(cliente.getNome());
+                            jFormattedTextFieldCPF.setText(cliente.getCpf());
+                            jFormattedTextFieldData.setText(cliente.getData());
+                            buttonGroup.clearSelection();
+                            if (cliente.isAtivo()) {
+                                jRadioButtonAtivo.setSelected(true);
+                            }else{
+                                jRadioButtonInativo.setSelected(true);
+                            }
+                        }
+                    } catch (NumberFormatException e1) {
+                        JOptionPane.showMessageDialog(null, "Campo deve conter somente números");
+                    }
+            
+                    }
+                }
+        });
     }
 
 }

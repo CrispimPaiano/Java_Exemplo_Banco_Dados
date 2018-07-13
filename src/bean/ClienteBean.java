@@ -1,7 +1,7 @@
 package bean;
 
 /**
- * @author Henrique Silva
+ * @author 
  */
 public class ClienteBean {
 

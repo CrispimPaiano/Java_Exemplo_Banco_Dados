@@ -43,6 +43,23 @@ public class ClienteDAO {
     }
 
     public boolean alterar(ClienteBean cliente) {
+        Connection conexao = ConexaoFactory.obterConexao();
+        String sql = "UPDATE clientes SET nome=?, data_nascimento=?, cpf=?,"
+                + "ativo=? WHERE id=?";
+        try{
+            PreparedStatement ps = conexao.prepareStatement(sql);
+            ps.setString(1, cliente.getNome());
+            ps.setString(2, cliente.getData());
+            ps.setString(3, cliente.getCpf());
+            ps.setBoolean(4, cliente.isAtivo());
+            ps.setInt(5, cliente.getId());
+            return ps.executeUpdate() == 1;
+        } catch (SQLException e){
+            e.printStackTrace();
+        } finally{
+            ConexaoFactory.fecharConexao();
+        }        
+        
         return false;
     }
 
@@ -75,13 +92,14 @@ public class ClienteDAO {
                 if (resultSet.next()) {
                     ClienteBean cliente = new ClienteBean();
                     cliente.setId(resultSet.getInt("id"));
-                    cliente.setId(resultSet.getInt("nome"));
-                    cliente.setId(resultSet.getInt("data_nascimento"));
-                    cliente.setId(resultSet.getInt("cpf"));
-                    cliente.setId(resultSet.getInt("ativo"));
+                    cliente.setNome(resultSet.getString("nome"));
+                    cliente.setData(resultSet.getString("data_nascimento"));
+                    cliente.setCpf(resultSet.getString("cpf"));
+                    cliente.setAtivo(resultSet.getBoolean("ativo"));
                     return cliente;
                 }
             } catch (Exception e) {
+                e.printStackTrace();
             } finally {
                 ConexaoFactory.fecharConexao();
             }
